@@ -129,7 +129,7 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, session }) => {
       {mobileMenuOpen && (
         <div className="lg:hidden absolute top-full left-0 w-full p-6 border-t border-[rgba(201,168,76,.1)] bg-[rgba(10,10,15,.98)] backdrop-blur-xl shadow-2xl">
           <div className="flex flex-col mb-4">
-            {[...navLinks, { label: 'FAQ', href: '/faq', id: 'faq' }].map(l => (
+            {[...navLinks].map(l => (
               <a 
                 key={l.id} 
                 href={l.href} 
