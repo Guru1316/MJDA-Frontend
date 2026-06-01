@@ -1,36 +1,52 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();
   
-  // --- State Management ---
-  const [currentStep, setCurrentStep] = useState<1 | 2>(1);
+  // --- Get today's date to block future DOB selection ---
+  const maxDate = new Date().toISOString().split('T')[0];
+
+  // --- State Management (Persisted with SessionStorage) ---
+  const [currentStep, setCurrentStep] = useState<1 | 2>(() => {
+    const savedStep = sessionStorage.getItem('mj_signup_step');
+    return savedStep ? JSON.parse(savedStep) : 1;
+  });
+
+  const [formData, setFormData] = useState(() => {
+    const savedData = sessionStorage.getItem('mj_signup_data');
+    return savedData ? JSON.parse(savedData) : {
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      dob: '',
+      gender: '',
+      password: '',
+      confirmPassword: '',
+      agreeTerms: false,
+    };
+  });
+
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // Form Data
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    dob: '',
-    gender: '',
-    password: '',
-    confirmPassword: '',
-    agreeTerms: false,
-  });
+  // --- Auto-save to SessionStorage on change ---
+  useEffect(() => {
+    sessionStorage.setItem('mj_signup_step', JSON.stringify(currentStep));
+    sessionStorage.setItem('mj_signup_data', JSON.stringify(formData));
+  }, [currentStep, formData]);
 
   // --- Handlers ---
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
-    setFormData((prev) => ({ ...prev, [name]: val }));
-    setError(null); // Clear errors when user types
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    setFormData((prev: any) => ({ ...prev, [name]: val }));
+    setError(null);
   };
 
   const nextStep = () => {
@@ -60,7 +76,7 @@ const Signup: React.FC = () => {
     if (/[A-Z]/.test(pwd)) s++;
     if (/[0-9]/.test(pwd)) s++;
     if (/[^A-Za-z0-9]/.test(pwd)) s++;
-    return s; // Returns 0, 1, 2, 3, or 4
+    return s;
   };
 
   const handleSignup = () => {
@@ -82,7 +98,6 @@ const Signup: React.FC = () => {
 
     setIsSubmitting(true);
 
-    // Simulate API delay, then save to LocalStorage
     setTimeout(() => {
       const users = JSON.parse(localStorage.getItem('mj_users') || '[]');
       
@@ -100,7 +115,7 @@ const Signup: React.FC = () => {
         phone,
         dob,
         gender,
-        password, // In a real MERN app, this would be hashed on the backend!
+        password, 
         role: 'student',
         joinDate: new Date().toISOString()
       };
@@ -111,15 +126,18 @@ const Signup: React.FC = () => {
       const session = { email: newUser.email, name: newUser.name, role: newUser.role, loggedIn: true };
       sessionStorage.setItem('mj_session', JSON.stringify(session));
       
+      // Clear form data from session storage after successful signup
+      sessionStorage.removeItem('mj_signup_step');
+      sessionStorage.removeItem('mj_signup_data');
+      
       setSuccess('Account created successfully! Redirecting...');
       
       setTimeout(() => {
-        navigate('/'); // Use React Router to navigate home
+        navigate('/');
       }, 1500);
     }, 1200);
   };
 
-  // --- Dynamic Render Helpers ---
   const pwdStrength = calculateStrength(formData.password);
   const colors = ['#ff6b6b', '#ffa94d', '#F0D080', '#4ade80'];
   const labels = ['Weak', 'Fair', 'Good', 'Strong'];
@@ -129,7 +147,6 @@ const Signup: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 py-12 relative overflow-hidden bg-(--dark)">
       
-      {/* --- BACK TO HOME BUTTON --- */}
       <button 
         onClick={() => navigate('/')}
         className="absolute top-6 left-6 md:top-8 md:left-8 flex items-center gap-2 text-white/50 hover:text-(--gold) transition-colors bg-transparent border-none cursor-pointer z-20 text-sm font-medium"
@@ -140,24 +157,17 @@ const Signup: React.FC = () => {
         Back to Home
       </button>
 
-      {/* Background Effects */}
       <div className="noise"></div>
       <div className="fixed top-0 right-0 w-96 h-96 rounded-full bg-[#6c4ef7] blur-[100px] opacity-10 pointer-events-none z-0"></div>
       <div className="fixed bottom-0 left-0 w-80 h-80 rounded-full bg-(--gold) blur-[100px] opacity-10 pointer-events-none z-0"></div>
 
       <div className="w-full max-w-2xl relative z-10">
         
-        {/* Main Logo Component (Replaces old simple text logo) */}
         <div className="text-center mb-8 fade-up flex justify-center">
           <button onClick={() => navigate('/login')} className="flex items-center gap-3 no-underline group bg-transparent border-none cursor-pointer">
-            {/* Glowing Gold Ring Wrapper */}
             <div className="relative w-11 h-11 rounded-full p-0.5 bg-linear-to-br from-[#C9A84C] to-[#F0D080] transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(201,168,76,.4)]">
               <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
-                <img 
-                  src="logo.png" 
-                  alt="MJ Logo" 
-                  className="w-full h-full object-cover"
-                />
+                <img src="logo.png" alt="MJ Logo" className="w-full h-full object-cover" />
               </div>
             </div>
             <span className="font-playfair font-bold text-2xl tracking-wide text-transparent bg-clip-text bg-linear-to-r from-[#C9A84C] via-white to-[#C9A84C] bg-size-[200%_auto] transition-all duration-1000 ease-out group-hover:bg-position-[-100%_center]">
@@ -172,7 +182,6 @@ const Signup: React.FC = () => {
             <p className="text-white/50">Join 500+ students already dancing with us</p>
           </div>
 
-          {/* Steps Indicator */}
           <div className="flex items-center gap-2 mb-8 max-w-md mx-auto">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-400 ${currentStep > 1 ? 'bg-[rgba(201,168,76,.2)] text-(--gold) border border-(--gold)' : 'bg-linear-to-br from-[#C9A84C] to-[#F0D080] text-[#0A0A0F]'}`}>
               {currentStep > 1 ? '✓' : '1'}
@@ -187,19 +196,9 @@ const Signup: React.FC = () => {
             <span>Security</span>
           </div>
 
-          {/* Alerts */}
-          {error && (
-            <div className="mb-4 p-3 rounded-lg text-sm bg-red-400/10 border border-red-400/30 text-red-400">
-              {error}
-            </div>
-          )}
-          {success && (
-            <div className="mb-4 p-3 rounded-lg text-sm bg-green-400/10 border border-green-400/30 text-green-400">
-              {success}
-            </div>
-          )}
+          {error && <div className="mb-4 p-3 rounded-lg text-sm bg-red-400/10 border border-red-400/30 text-red-400">{error}</div>}
+          {success && <div className="mb-4 p-3 rounded-lg text-sm bg-green-400/10 border border-green-400/30 text-green-400">{success}</div>}
 
-          {/* --- Step 1: Personal Info --- */}
           {currentStep === 1 && (
             <div className="fade-up">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -221,7 +220,8 @@ const Signup: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm text-white/60 mb-2">Date of Birth</label>
-                  <input type="date" name="dob" value={formData.dob} onChange={handleChange} className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all" style={{ colorScheme: 'dark' }} />
+                  {/* Added max={maxDate} here to prevent future dates */}
+                  <input type="date" name="dob" max={maxDate} value={formData.dob} onChange={handleChange} className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all" style={{ colorScheme: 'dark' }} />
                 </div>
                 <div>
                   <label className="block text-sm text-white/60 mb-2">Gender</label>
@@ -238,28 +238,19 @@ const Signup: React.FC = () => {
             </div>
           )}
 
-          {/* --- Step 2: Security --- */}
           {currentStep === 2 && (
             <div className="fade-up">
               <div className="space-y-5">
                 <div>
                   <label className="block text-sm text-white/60 mb-2">Create Password</label>
                   <div className="relative">
-                    <input 
-                      type={showPassword ? 'text' : 'password'} 
-                      name="password" 
-                      value={formData.password} 
-                      onChange={handleChange} 
-                      placeholder="Min. 8 characters" 
-                      className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all pr-12 placeholder-white/30" 
-                    />
+                    <input type={showPassword ? 'text' : 'password'} name="password" value={formData.password} onChange={handleChange} placeholder="Min. 8 characters" className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all pr-12 placeholder-white/30" />
                     <button type="button" className="absolute right-3 top-3 text-white/40 hover:text-(--gold) transition-colors bg-transparent border-none cursor-pointer" onClick={() => setShowPassword(!showPassword)}>
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-5 h-5">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                       </svg>
                     </button>
                   </div>
-                  {/* Strength Bar */}
                   <div className="mt-2 flex gap-1">
                     {[1, 2, 3, 4].map((level) => (
                       <div key={level} className="h-1 rounded-sm flex-1 transition-colors duration-400" style={{ background: level <= pwdStrength ? colors[pwdStrength - 1] : 'rgba(255,255,255,.1)' }}></div>
@@ -271,14 +262,7 @@ const Signup: React.FC = () => {
                 <div>
                   <label className="block text-sm text-white/60 mb-2">Confirm Password</label>
                   <div className="relative">
-                    <input 
-                      type={showConfirm ? 'text' : 'password'} 
-                      name="confirmPassword" 
-                      value={formData.confirmPassword} 
-                      onChange={handleChange} 
-                      placeholder="Re-enter your password" 
-                      className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all pr-12 placeholder-white/30" 
-                    />
+                    <input type={showConfirm ? 'text' : 'password'} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="Re-enter your password" className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all pr-12 placeholder-white/30" />
                     <button type="button" className="absolute right-3 top-3 text-white/40 hover:text-(--gold) transition-colors bg-transparent border-none cursor-pointer" onClick={() => setShowConfirm(!showConfirm)}>
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-5 h-5">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -289,7 +273,7 @@ const Signup: React.FC = () => {
 
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" name="agreeTerms" checked={formData.agreeTerms} onChange={handleChange} className="mt-1 w-4 h-4 cursor-pointer" style={{ accentColor: 'var(--gold)' }} />
-                  <span className="text-white/50 text-sm">I agree to the <button onClick={() => navigate('/terms')} className="text-(--gold) bg-transparent border-none cursor-pointer p-0 font-inherit">Terms & Conditions</button> and <button onClick={() => navigate('/privacy')} className="text-(--gold) bg-transparent border-none cursor-pointer p-0 font-inherit">Privacy Policy</button></span>
+                  <span className="text-white/50 text-sm">I agree to the <button onClick={() => navigate('/terms')} className="text-(--gold) bg-transparent border-none cursor-pointer p-0 font-inherit hover:underline">Terms & Conditions</button> and <button onClick={() => navigate('/privacy')} className="text-(--gold) bg-transparent border-none cursor-pointer p-0 font-inherit hover:underline">Privacy Policy</button></span>
                 </label>
               </div>
 
@@ -302,7 +286,7 @@ const Signup: React.FC = () => {
             </div>
           )}
 
-          <p className="text-center text-white/50 text-sm mt-6">Already have an account? <button onClick={() => navigate('/login')} className="text-(--gold) font-medium bg-transparent border-none cursor-pointer p-0 font-inherit">Sign In</button></p>
+          <p className="text-center text-white/50 text-sm mt-6">Already have an account? <button onClick={() => navigate('/login')} className="text-(--gold) font-medium bg-transparent border-none cursor-pointer p-0 font-inherit hover:underline">Sign In</button></p>
         </div>
       </div>
     </div>
