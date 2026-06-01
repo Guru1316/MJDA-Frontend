@@ -157,13 +157,26 @@ const Admin: React.FC = () => {
       {/* Sidebar */}
       <div className="w-full md:w-64 bg-(--dark2) border-r border-[rgba(201,168,76,.15)] flex flex-col md:min-h-screen shrink-0">
         <div className="p-6 border-b border-[rgba(201,168,76,.1)]">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-linear-to-br from-[#C9A84C] to-[#F0D080] flex items-center justify-center font-bold text-black playfair">MJ</div>
-            <div>
-              <div className="font-bold text-sm tracking-wide">ADMIN PORTAL</div>
-              <div className="text-xs text-white/40">MJ Dance Academy</div>
+          <a href="/" className="flex items-center gap-3 no-underline group">
+            {/* Glowing Gold Ring Wrapper */}
+            <div className="relative shrink-0 w-11 h-11 rounded-full p-0.5 bg-linear-to-br from-[#C9A84C] to-[#F0D080] transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(201,168,76,.4)]">
+              <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
+                <img 
+                  src="logo.png" 
+                  alt="MJ Logo" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
-          </div>
+            <div className="flex flex-col">
+              <span className="font-bold text-sm tracking-wide text-white mb-0.5">
+                ADMIN PORTAL
+              </span>
+              <span className="font-playfair font-bold text-sm tracking-wide text-transparent bg-clip-text bg-linear-to-r from-[#C9A84C] via-white to-[#C9A84C] bg-size-[200%_auto] transition-all duration-1000 ease-out group-hover:bg-position-[-100%_center]">
+                MJ Dance Academy
+              </span>
+            </div>
+          </a>
         </div>
         <div className="p-4 flex-1 flex flex-col gap-2">
           <button onClick={() => setActiveTab('dashboard')} className={`text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer border-none ${activeTab === 'dashboard' ? 'bg-[rgba(201,168,76,.15)] text-(--gold)' : 'text-white/60 bg-transparent hover:bg-white/5 hover:text-white'}`}>📊 Dashboard</button>
