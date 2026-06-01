@@ -19,11 +19,9 @@ const Login: React.FC = () => {
       try {
         const r = JSON.parse(rem);
         if (r.role === 'admin') {
-          // Admins aren't allowed to use "remember me", clear it securely
           localStorage.removeItem('mj_remember');
           sessionStorage.removeItem('mj_session');
         } else {
-          // Restore session for normal users and auto-redirect
           sessionStorage.setItem('mj_session', JSON.stringify(r));
           navigate('/');
         }
@@ -39,18 +37,15 @@ const Login: React.FC = () => {
     setError(null);
     setIsLoading(true);
 
-    // Simulate API delay
     setTimeout(() => {
       const users = JSON.parse(localStorage.getItem('mj_users') || '[]');
 
-      // Hardcoded Admin for demo purposes
       const adminEmail = 'admin@mjdance.com';
       const adminPassword = 'Admin@123';
 
-      // eslint-disable-next-line no-useless-assignment
-      let user = null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any, no-useless-assignment
+      let user: any = null;
 
-      // Check admin first
       if (email === adminEmail && password === adminPassword) {
         user = {
           email: adminEmail,
@@ -58,7 +53,6 @@ const Login: React.FC = () => {
           role: 'admin'
         };
       } else {
-        // Normal users check
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         user = users.find((u: any) => u.email === email && u.password === password);
       }
@@ -72,7 +66,7 @@ const Login: React.FC = () => {
         }
 
         if (user.role === 'admin') {
-          navigate('/admin'); // Assuming you will build an admin route later!
+          navigate('/admin'); 
         } else {
           navigate('/');
         }
@@ -114,9 +108,18 @@ const Login: React.FC = () => {
         </div>
 
         <div className="text-center z-10 animate-[float_4s_ease-in-out_infinite]">
-          <div className="w-28 h-28 rounded-full flex items-center justify-center mx-auto mb-6 bg-linear-to-br from-[#C9A84C] to-[#F0D080] shadow-[0_0_60px_rgba(201,168,76,.3)]">
-            <span className="text-4xl font-bold text-black playfair">MJ</span>
+          
+          {/* --- UPDATED DESKTOP LOGO --- */}
+          <div className="relative w-28 h-28 rounded-full p-1 bg-linear-to-br from-[#C9A84C] to-[#F0D080] shadow-[0_0_60px_rgba(201,168,76,.3)] mx-auto mb-6">
+            <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
+              <img 
+                src="logo.png" 
+                alt="MJ Logo" 
+                className="w-full h-full object-cover"
+              />
+            </div>
           </div>
+          
           <h1 className="playfair text-5xl font-bold text-white mb-2">MJ Dance</h1>
           <h1 className="playfair text-5xl font-bold mb-4 text-(--gold)">Academy</h1>
           <p className="text-white/50 text-lg max-w-xs mx-auto leading-relaxed">Where Every Step Tells a Story. Begin Your Journey Today.</p>
@@ -143,18 +146,32 @@ const Login: React.FC = () => {
       {/* --- RIGHT PANEL (Form) --- */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-16 z-10">
         <div className="w-full max-w-md">
-          {/* Mobile Logo */}
+          
+          {/* --- UPDATED MOBILE LOGO --- */}
           <div className="lg:hidden text-center mb-8 fade-up">
-            <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-3 bg-linear-to-br from-[#C9A84C] to-[#F0D080]">
-              <span className="text-2xl font-bold text-black playfair">MJ</span>
+            <div className="relative w-16 h-16 rounded-full p-0.5 bg-linear-to-br from-[#C9A84C] to-[#F0D080] mx-auto mb-3 shadow-[0_0_20px_rgba(201,168,76,.4)]">
+              <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
+                <img 
+                  src="logo.png" 
+                  alt="MJ Logo" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
-            <h1 className="playfair text-3xl font-bold text-white">MJ Dance Academy</h1>
+            <h1 className="playfair text-3xl font-bold text-transparent bg-clip-text bg-linear-to-r from-[#C9A84C] via-white to-[#C9A84C] bg-size-[200%_auto]">
+              MJ Dance Academy
+            </h1>
           </div>
 
           <div className="card rounded-2xl p-8 lg:p-10 fade-up">
-            <div className="mb-8">
+            <div className="mb-8 hidden lg:block">
               <h2 className="playfair text-3xl font-bold text-white mb-2">Welcome Back</h2>
               <p className="text-white/50">Sign in to continue your dance journey</p>
+            </div>
+            {/* Added Welcome Back specifically for Mobile since Desktop logo moved */}
+            <div className="mb-8 lg:hidden text-center">
+              <h2 className="playfair text-2xl font-bold text-white mb-1">Welcome Back</h2>
+              <p className="text-white/50 text-sm">Sign in to continue your dance journey</p>
             </div>
 
             {error && (

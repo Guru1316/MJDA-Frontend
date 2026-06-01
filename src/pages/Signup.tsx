@@ -146,13 +146,23 @@ const Signup: React.FC = () => {
       <div className="fixed bottom-0 left-0 w-80 h-80 rounded-full bg-(--gold) blur-[100px] opacity-10 pointer-events-none z-0"></div>
 
       <div className="w-full max-w-2xl relative z-10">
-        {/* Logo */}
-        <div className="text-center mb-8 fade-up">
-          <button onClick={() => navigate('/login')} className="inline-flex items-center gap-3 no-underline bg-transparent border-none cursor-pointer">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center bg-linear-to-br from-[#C9A84C] to-[#F0D080]">
-              <span className="text-xl font-bold text-black playfair">MJ</span>
+        
+        {/* Main Logo Component (Replaces old simple text logo) */}
+        <div className="text-center mb-8 fade-up flex justify-center">
+          <button onClick={() => navigate('/login')} className="flex items-center gap-3 no-underline group bg-transparent border-none cursor-pointer">
+            {/* Glowing Gold Ring Wrapper */}
+            <div className="relative w-11 h-11 rounded-full p-0.5 bg-linear-to-br from-[#C9A84C] to-[#F0D080] transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(201,168,76,.4)]">
+              <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
+                <img 
+                  src="logo.png" 
+                  alt="MJ Logo" 
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </div>
-            <span className="playfair text-2xl font-bold text-white">MJ Dance Academy</span>
+            <span className="font-playfair font-bold text-2xl tracking-wide text-transparent bg-clip-text bg-linear-to-r from-[#C9A84C] via-white to-[#C9A84C] bg-size-[200%_auto] transition-all duration-1000 ease-out group-hover:bg-position-[-100%_center]">
+              MJ Dance Academy
+            </span>
           </button>
         </div>
 
