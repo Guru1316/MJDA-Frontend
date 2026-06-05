@@ -2,7 +2,7 @@
 import React from 'react';
 
 export interface Course {
-  id: string;
+  _id?: string;
   emoji: string;
   name: string;
   level: string;
@@ -29,7 +29,6 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, index, onApply }) => {
         transform: 'translateY(30px)'
       }}
     >
-      {/* Card Header / Image Area */}
       <div 
         className="h-55 flex items-center justify-center relative overflow-hidden group"
         style={{ background: `linear-gradient(135deg, ${course.color}33, ${course.color}11)` }}
@@ -37,13 +36,11 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, index, onApply }) => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,.15),transparent)]"></div>
         <span className="text-[6rem] z-10 transition-transform duration-500 group-hover:scale-110">{course.emoji}</span>
         
-        {/* Level Badge */}
         <div className="absolute top-4 right-4 bg-black/40 border border-white/10 px-3 py-1.5 rounded-full text-xs text-white font-medium backdrop-blur-md z-20">
           {course.level}
         </div>
       </div>
 
-      {/* Card Body */}
       <div className="p-6 flex flex-col flex-1">
         <h3 className="text-xl font-bold mb-3 text-white">{course.name}</h3>
         <p className="text-white/55 leading-relaxed mb-5 min-h-18.75 text-sm">

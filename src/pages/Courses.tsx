@@ -3,15 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar, { type Session } from '../components/Navbar';
 import Footer from '../components/Footer';
 import CourseCard, { type Course } from '../components/CourseCard';
-
-const DEFAULT_COURSES: Course[] = [
-  { id: 'c1', emoji: '💃', name: 'Bharatanatyam', level: 'All Levels', duration: '6 months', students: 120, price: '₹3,500/mo', desc: 'Classical South Indian temple dance. Deeply expressive, spiritual, and technically demanding.', color: '#ff6b9d' },
-  { id: 'c2', emoji: '🕺', name: 'Hip-Hop', level: 'Beginner–Advanced', duration: '3 months', students: 95, price: '₹2,800/mo', desc: 'Street dance culture meets rhythm. Freestyle, breaking, and choreography covered.', color: '#6c4ef7' },
-  { id: 'c3', emoji: '🌊', name: 'Contemporary', level: 'Intermediate', duration: '4 months', students: 78, price: '₹3,200/mo', desc: 'Fluid, emotive movement blending ballet and modern techniques for storytelling.', color: '#22d3ee' },
-  { id: 'c4', emoji: '🔥', name: 'Salsa & Bachata', level: 'Beginner–Intermediate', duration: '2 months', students: 110, price: '₹2,500/mo', desc: 'Partner dance with Latin flair. Perfect for events, weddings, and pure fun.', color: '#f97316' },
-  { id: 'c5', emoji: '👑', name: 'Kathak', level: 'All Levels', duration: '8 months', students: 65, price: '₹3,800/mo', desc: 'North Indian classical dance with intricate footwork, spins, and expressive gestures.', color: '#C9A84C' },
-  { id: 'c6', emoji: '🎵', name: 'Bollywood Fusion', level: 'Beginner', duration: '2 months', students: 145, price: '₹2,200/mo', desc: 'High-energy Bollywood with folk and contemporary fusion. Great for all ages.', color: '#4ade80' },
-];
+import { getAllCourses } from '../services/api';
 
 const Courses: React.FC = () => {
   const navigate = useNavigate();
@@ -22,20 +14,23 @@ const Courses: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [levelFilter, setLevelFilter] = useState('all');
   const [sortFilter, setSortFilter] = useState('default');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 1. Session Setup
-    const storedSession = sessionStorage.getItem('mj_session');
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (storedSession) setSession(JSON.parse(storedSession));
+    const fetchCourses = async () => {
+      const storedSession = sessionStorage.getItem('mj_session');
+      if (storedSession) setSession(JSON.parse(storedSession));
 
-    // 2. Load Courses
-    let loadedCourses = JSON.parse(localStorage.getItem('mj_courses') || '[]');
-    if (!loadedCourses || loadedCourses.length === 0) {
-      loadedCourses = DEFAULT_COURSES;
-      localStorage.setItem('mj_courses', JSON.stringify(DEFAULT_COURSES));
-    }
-    setAllCourses(loadedCourses);
+      try {
+        const data = await getAllCourses();
+        if(data) setAllCourses(data);
+      } catch (err) {
+        console.error("Failed to load courses", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCourses();
   }, []);
 
   // --- Handlers ---
@@ -132,11 +127,13 @@ const Courses: React.FC = () => {
 
       {/* --- COURSE GRID --- */}
       <section className="pb-24 px-6 max-w-7xl mx-auto">
-        {filteredCourses.length > 0 ? (
+        {loading ? (
+          <div className="text-center py-20 text-white/50 italic text-lg">Loading courses...</div>
+        ) : filteredCourses.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredCourses.map((course, idx) => (
               <CourseCard 
-                key={course.id} 
+                key={course._id} 
                 course={course} 
                 index={idx} 
                 onApply={handleApply} 

@@ -5,6 +5,7 @@ export interface Session {
   name: string;
   email: string;
   role: string;
+  token?: string; // Added token to type definition
   loggedIn: boolean;
 }
 
@@ -42,10 +43,8 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, session }) => {
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-18">
         {/* Logo */}
         <a href="/" className="flex items-center gap-3 no-underline group">
-          {/* Glowing Gold Ring Wrapper */}
           <div className="relative w-11 h-11 rounded-full p-0.5 bg-linear-to-br from-[#C9A84C] to-[#F0D080] transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(201,168,76,.4)]">
             <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
-              {/* Replace 'src' with your actual image path (e.g., '/mj-logo.jpg' inside your public folder) */}
               <img 
                 src="logo.png" 
                 alt="MJ Logo" 
@@ -53,9 +52,9 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, session }) => {
               />
             </div>
           </div>
-          <span className="font-playfair font-bold text-2xl tracking-wide text-transparent bg-clip-text bg-linear-to-r from-[#C9A84C] via-white to-[#C9A84C] bg-size-[200%_auto] transition-all duration-1000 ease-out group-hover:bg-position-[-100%_center]">
-  MJ Dance Academy
-</span>
+          <span className="font-playfair font-bold text-xl tracking-wide text-transparent bg-clip-text bg-linear-to-r from-[#C9A84C] via-white to-[#C9A84C] bg-size-[200%_auto] transition-all duration-1000 ease-out group-hover:bg-position-[-100%_center]">
+            MJ Dance Academy
+          </span>
         </a>
 
         {/* Desktop Links */}
@@ -74,7 +73,7 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, session }) => {
         {/* Auth / Profile Actions */}
         <div className="flex items-center gap-4">
           {session ? (
-            <div className="relative hidden lg:block"> {/* <--- FIXED: Hidden on mobile! */}
+            <div className="relative hidden lg:block">
               <button 
                 onClick={() => setDropdownOpen(!dropdownOpen)} 
                 className="flex items-center gap-2 bg-[rgba(201,168,76,.1)] border border-[rgba(201,168,76,.2)] px-3.5 py-2 rounded-full cursor-pointer text-white"

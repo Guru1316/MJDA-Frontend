@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { loginUser } from '../services/api'; // <-- Backend API import
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -32,49 +33,40 @@ const Login: React.FC = () => {
   }, [navigate]);
 
   // --- Handlers ---
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setIsLoading(true);
 
-    setTimeout(() => {
-      const users = JSON.parse(localStorage.getItem('mj_users') || '[]');
+    try {
+      // Call the real backend API!
+      const data = await loginUser({ email, password });
 
-      const adminEmail = 'admin@mjdance.com';
-      const adminPassword = 'Admin@123';
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any, no-useless-assignment
-      let user: any = null;
-
-      if (email === adminEmail && password === adminPassword) {
-        user = {
-          email: adminEmail,
-          name: 'Administrator',
-          role: 'admin'
-        };
-      } else {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        user = users.find((u: any) => u.email === email && u.password === password);
+      const session = { 
+        email: data.email, 
+        name: data.name, 
+        role: data.role || 'student', 
+        token: data.token, // Store JWT token
+        loggedIn: true 
+      };
+      
+      sessionStorage.setItem('mj_session', JSON.stringify(session));
+      
+      if (remember && data.role !== 'admin') {
+        localStorage.setItem('mj_remember', JSON.stringify(session));
       }
 
-      if (user) {
-        const session = { email: user.email, name: user.name, role: user.role || 'student', loggedIn: true };
-        sessionStorage.setItem('mj_session', JSON.stringify(session));
-        
-        if (remember && user.role !== 'admin') {
-          localStorage.setItem('mj_remember', JSON.stringify(session));
-        }
-
-        if (user.role === 'admin') {
-          navigate('/admin'); 
-        } else {
-          navigate('/');
-        }
+      if (data.role === 'admin') {
+        navigate('/admin'); 
       } else {
-        setError('Invalid email or password. Please try again or Sign up.');
-        setIsLoading(false);
+        navigate('/');
       }
-    }, 1200);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      setError(err.message || 'Invalid email or password. Please try again or Sign up.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -108,8 +100,6 @@ const Login: React.FC = () => {
         </div>
 
         <div className="text-center z-10 animate-[float_4s_ease-in-out_infinite]">
-          
-          {/* --- UPDATED DESKTOP LOGO --- */}
           <div className="relative w-28 h-28 rounded-full p-1 bg-linear-to-br from-[#C9A84C] to-[#F0D080] shadow-[0_0_60px_rgba(201,168,76,.3)] mx-auto mb-6">
             <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
               <img 
@@ -147,7 +137,6 @@ const Login: React.FC = () => {
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-16 z-10">
         <div className="w-full max-w-md">
           
-          {/* --- UPDATED MOBILE LOGO --- */}
           <div className="lg:hidden text-center mb-8 fade-up">
             <div className="relative w-16 h-16 rounded-full p-0.5 bg-linear-to-br from-[#C9A84C] to-[#F0D080] mx-auto mb-3 shadow-[0_0_20px_rgba(201,168,76,.4)]">
               <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
@@ -168,7 +157,6 @@ const Login: React.FC = () => {
               <h2 className="playfair text-3xl font-bold text-white mb-2">Welcome Back</h2>
               <p className="text-white/50">Sign in to continue your dance journey</p>
             </div>
-            {/* Added Welcome Back specifically for Mobile since Desktop logo moved */}
             <div className="mb-8 lg:hidden text-center">
               <h2 className="playfair text-2xl font-bold text-white mb-1">Welcome Back</h2>
               <p className="text-white/50 text-sm">Sign in to continue your dance journey</p>
@@ -251,7 +239,7 @@ const Login: React.FC = () => {
 
             <p className="text-center text-white/50 text-sm mt-6">
               Don't have an account?{' '}
-              <button onClick={() => navigate('/signup')} className="font-medium transition-colors text-(--gold) hover:text-[#F0D080] bg-transparent border-none cursor-pointer p-0 font-inherit">
+              <button onClick={() => navigate('/signup')} className="font-medium transition-colors text-(--gold) hover:text-[#F0D080] bg-transparent border-none cursor-pointer p-0 font-inherit hover:underline">
                 Sign Up Free
               </button>
             </p>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { requestPasswordReset, verifyResetOtp, submitNewPassword } from '../services/api'; // <--- Import API
 
 const ForgotPassword: React.FC = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ const ForgotPassword: React.FC = () => {
   }, [countdown]);
 
   // --- Handlers ---
-  const handleSendOTP = () => {
+  const handleSendOTP = async () => {
     setError(null);
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError('Please enter a valid email address.');
@@ -33,11 +34,18 @@ const ForgotPassword: React.FC = () => {
     }
     
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      // 1. Call real backend API to send OTP
+      await requestPasswordReset(email);
+      
       setCurrentStep(2);
       setCountdown(60); // Start 60s countdown
-    }, 1500);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      setError(err.message || 'Failed to send OTP.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleOtpChange = (index: number, value: string) => {
@@ -58,17 +66,29 @@ const ForgotPassword: React.FC = () => {
     }
   };
 
-  const verifyOTP = () => {
+  const verifyOTP = async () => {
     setError(null);
     const code = otp.join('');
-    if (code === '123456' || code.length === 6) {
+    
+    if (code.length !== 6) {
+      setError('Please enter a valid 6-digit code.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // 2. Call real backend API to verify OTP
+      await verifyResetOtp({ email, otp: code });
       setCurrentStep(3);
-    } else {
-      setError('Invalid code. Try 123456 for demo.');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      setError(err.message || 'Invalid or expired code.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const resetPassword = () => {
+  const resetPassword = async () => {
     setError(null);
     if (newPassword.length < 8) {
       setError('Password must be at least 8 characters.');
@@ -79,22 +99,32 @@ const ForgotPassword: React.FC = () => {
       return;
     }
 
-    const users = JSON.parse(localStorage.getItem('mj_users') || '[]');
+    setIsLoading(true);
+    try {
+      const code = otp.join('');
+      // 3. Call real backend API to set new password
+      await submitNewPassword({ email, otp: code, newPassword });
+      setCurrentStep(4);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const idx = users.findIndex((u: any) => u.email === email);
-    
-    if (idx > -1) {
-      users[idx].password = newPassword;
-      localStorage.setItem('mj_users', JSON.stringify(users));
+    } catch (err: any) {
+      setError(err.message || 'Failed to reset password. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-    
-    setCurrentStep(4);
   };
 
-  const resendOTP = () => {
-    setCountdown(60);
+  const resendOTP = async () => {
+    setError(null);
     setOtp(['', '', '', '', '', '']);
     otpRefs.current[0]?.focus();
+    
+    try {
+      await requestPasswordReset(email);
+      setCountdown(60);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend OTP.');
+    }
   };
 
   return (
@@ -117,10 +147,8 @@ const ForgotPassword: React.FC = () => {
 
       <div className="w-full max-w-md relative z-10 fade-up">
         
-        {/* --- UPDATED LOGO COMPONENT --- */}
         <div className="text-center mb-8 flex justify-center">
           <button onClick={() => navigate('/login')} className="flex items-center gap-3 no-underline group bg-transparent border-none cursor-pointer">
-            {/* Glowing Gold Ring Wrapper */}
             <div className="relative w-11 h-11 rounded-full p-0.5 bg-linear-to-br from-[#C9A84C] to-[#F0D080] transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(201,168,76,.4)]">
               <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
                 <img 
@@ -183,7 +211,6 @@ const ForgotPassword: React.FC = () => {
               </div>
               <h2 className="playfair text-3xl font-bold text-white mb-2">Check Your Email</h2>
               <p className="text-white/50 text-sm">We sent a 6-digit code to <span className="text-(--gold)">{email}</span></p>
-              <p className="text-white/30 text-xs mt-1">(Demo: use code <span className="text-(--gold) font-bold">123456</span>)</p>
             </div>
             
             {error && <div className="mb-4 p-3 rounded-lg text-sm bg-red-400/10 border border-red-400/30 text-red-400">{error}</div>}
@@ -204,7 +231,9 @@ const ForgotPassword: React.FC = () => {
                 />
               ))}
             </div>
-            <button onClick={verifyOTP} className="btn-gold w-full py-3 rounded-xl text-sm mb-4 border-none">Verify Code →</button>
+            <button onClick={verifyOTP} disabled={isLoading} className="btn-gold w-full py-3 rounded-xl text-sm mb-4 border-none disabled:opacity-70 disabled:cursor-not-allowed">
+              {isLoading ? 'Verifying...' : 'Verify Code →'}
+            </button>
             <p className="text-center text-sm text-white/50">
               Didn't receive?{' '}
               {countdown > 0 ? (
@@ -252,7 +281,9 @@ const ForgotPassword: React.FC = () => {
                   className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all placeholder-white/30"
                 />
               </div>
-              <button onClick={resetPassword} className="btn-gold w-full py-3 rounded-xl text-sm border-none mt-2">Reset Password ✓</button>
+              <button onClick={resetPassword} disabled={isLoading} className="btn-gold w-full py-3 rounded-xl text-sm border-none mt-2 disabled:opacity-70 disabled:cursor-not-allowed">
+                {isLoading ? 'Updating...' : 'Reset Password ✓'}
+              </button>
             </div>
           </div>
         )}

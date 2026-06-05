@@ -1,38 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import Navbar, { type Session } from '../components/Navbar'; // Importing the shared component and type!
+import Navbar, { type Session } from '../components/Navbar';
 import Footer from '../components/Footer';
+import { getAllCourses, getMyApplications } from '../services/api';
+import type { Course } from '../components/CourseCard';
 
-// --- Types ---
 interface CourseApp {
-  email: string;
-  status: 'Pending' | 'Approved' | 'Rejected';
+  _id: string;
   courseName: string;
+  status: 'Pending' | 'Approved' | 'Rejected';
 }
 
-interface Course {
-  id: string;
-  emoji: string;
-  name: string;
-  level: string;
-  duration: string;
-  students: number;
-  price: string;
-  desc: string;
-  color: string;
-}
-
-// --- Static Data ---
 const STATS = [
   { icon: '🎓', val: '500+', label: 'Students Enrolled', sub: 'Across all courses' },
   { icon: '🏆', val: '50+', label: 'Awards Won', sub: 'National & state level' },
   { icon: '🎭', val: '200+', label: 'Performances', sub: 'Annual shows & events' },
   { icon: '⭐', val: '4.9/5', label: 'Student Rating', sub: 'Based on 300+ reviews' },
-];
-
-const DEFAULT_COURSES: Course[] = [
-  { id: 'c1', emoji: '💃', name: 'Bharatanatyam', level: 'All Levels', duration: '6 months', students: 120, price: '₹3,500/mo', desc: 'Classical South Indian temple dance. Deeply expressive, spiritual, and technically demanding.', color: '#ff6b9d' },
-  { id: 'c2', emoji: '🕺', name: 'Hip-Hop', level: 'Beginner–Advanced', duration: '3 months', students: 95, price: '₹2,800/mo', desc: 'Street dance culture meets rhythm. Freestyle, breaking, and choreography covered.', color: '#6c4ef7' },
-  { id: 'c3', emoji: '🌊', name: 'Contemporary', level: 'Intermediate', duration: '4 months', students: 78, price: '₹3,200/mo', desc: 'Fluid, emotive movement blending ballet and modern techniques for storytelling.', color: '#22d3ee' },
 ];
 
 const SCHEDULE = [
@@ -52,29 +34,36 @@ const TESTIMONIALS = [
 
 const Home: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
-  const [courses, setCourses] = useState<Course[]>(DEFAULT_COURSES);
+  const [courses, setCourses] = useState<Course[]>([]);
   const [myApps, setMyApps] = useState<CourseApp[]>([]);
 
   useEffect(() => {
-    // 1. Fetch Session
-    const storedSession = sessionStorage.getItem('mj_session');
-    if (storedSession) {
-      const parsedSession = JSON.parse(storedSession);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSession(parsedSession);
-      
-      // Fetch Applications if logged in
-      const apps: CourseApp[] = JSON.parse(localStorage.getItem('mj_applications') || '[]');
-      setMyApps(apps.filter((a) => a.email === parsedSession.email));
-    }
+    const initializeHome = async () => {
+      // 1. Fetch Session
+      const storedSession = sessionStorage.getItem('mj_session');
+      let isStudent = false;
+      if (storedSession) {
+        const parsedSession = JSON.parse(storedSession);
+        setSession(parsedSession);
+        if (parsedSession.role !== 'admin') isStudent = true;
+      }
 
-    // 2. Fetch Courses
-    let localCourses = JSON.parse(localStorage.getItem('mj_courses') || '[]');
-    if (!localCourses || localCourses.length === 0) {
-      localStorage.setItem('mj_courses', JSON.stringify(DEFAULT_COURSES));
-      localCourses = DEFAULT_COURSES;
-    }
-    setCourses(localCourses.slice(0, 3));
+      try {
+        // 2. Fetch Courses from API
+        const courseData = await getAllCourses();
+        if (courseData) setCourses(courseData.slice(0, 3));
+
+        // 3. Fetch Applications if user is logged in
+        if (isStudent) {
+          const appsData = await getMyApplications();
+          if (appsData) setMyApps(appsData);
+        }
+      } catch (error) {
+        console.error('Error fetching home data:', error);
+      }
+    };
+
+    initializeHome();
   }, []);
 
   const handleEnroll = (courseName: string) => {
@@ -97,7 +86,7 @@ const Home: React.FC = () => {
       const pendingApps = myApps.filter((a) => a.status === 'Pending');
 
       return (
-        <div className="card rounded-3xl p-6" style={{ transform: 'perspective(1000px) rotateY(-5deg) rotateX(3deg)', boxShadow: '0 40px 80px rgba(0,0,0,.5)' }}>
+        <div className="card rounded-3xl p-6 bg-[rgba(28,28,40,.8)] border border-[rgba(201,168,76,.15)] backdrop-blur-md" style={{ transform: 'perspective(1000px) rotateY(-5deg) rotateX(3deg)', boxShadow: '0 40px 80px rgba(0,0,0,.5)' }}>
           <div className="flex items-center justify-between mb-6">
             <div>
               <div className="text-xs text-white/40">Welcome back,</div>
@@ -113,14 +102,14 @@ const Home: React.FC = () => {
                   <span className="text-white/60">{approvedCourses[0].courseName} Progress</span>
                   <span className="text-(--gold)">75%</span>
                 </div>
-                <div className="progress-bar"><div className="progress-fill" style={{ width: '75%' }}></div></div>
+                <div className="w-full bg-white/10 rounded-full h-1.5"><div className="bg-(--gold) h-1.5 rounded-full" style={{ width: '75%' }}></div></div>
               </div>
               <div className="bg-[rgba(201,168,76,.06)] border border-[rgba(201,168,76,.12)] rounded-xl p-3">
                 <div className="text-xs text-white/40 mb-2">YOUR NEXT CLASS</div>
                 <div className="font-semibold">{approvedCourses[0].courseName} Session</div>
                 <div className="text-sm text-white/50 mt-1">Upcoming soon · Main Studio</div>
                 <div className="flex gap-2 mt-3">
-                  <div className="tag">Enrolled</div>
+                  <div className="text-xs font-medium px-2 py-1 bg-white/5 rounded">Enrolled</div>
                   <div className="bg-green-400/10 text-green-400 border border-green-400/20 text-xs font-semibold px-3 py-1 rounded-full">Confirmed</div>
                 </div>
               </div>
@@ -144,7 +133,7 @@ const Home: React.FC = () => {
 
     // Guest Card
     return (
-      <div className="card rounded-3xl p-6 relative overflow-hidden" style={{ transform: 'perspective(1000px) rotateY(-5deg) rotateX(3deg)', boxShadow: '0 40px 80px rgba(0,0,0,.5)' }}>
+      <div className="card rounded-3xl p-6 relative overflow-hidden bg-[rgba(28,28,40,.8)] border border-[rgba(201,168,76,.15)]" style={{ transform: 'perspective(1000px) rotateY(-5deg) rotateX(3deg)', boxShadow: '0 40px 80px rgba(0,0,0,.5)' }}>
         <div className="blur-[6px] opacity-40 pointer-events-none">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -158,7 +147,7 @@ const Home: React.FC = () => {
               <span className="text-white/60">Hip-Hop Progress</span>
               <span className="text-(--gold)">80%</span>
             </div>
-            <div className="progress-bar"><div className="progress-fill" style={{ width: '80%' }}></div></div>
+            <div className="w-full bg-white/10 rounded-full h-1.5"><div className="bg-(--gold) h-1.5 rounded-full" style={{ width: '80%' }}></div></div>
           </div>
           <div className="bg-[rgba(201,168,76,.06)] border border-[rgba(201,168,76,.12)] rounded-xl p-3">
             <div className="text-xs text-white/40 mb-2">NEXT CLASS</div>
@@ -179,8 +168,6 @@ const Home: React.FC = () => {
   return (
     <>
       <div className="noise"></div>
-      
-      {/* Our fresh clean Navbar component right here */}
       <Navbar activePage="home" session={session} />
 
       {/* --- HERO SECTION --- */}
@@ -192,7 +179,7 @@ const Home: React.FC = () => {
 
         <div className="hero-grid max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div>
-            <div className="tag inline-block mb-4 fade-up">🏆 Ranked #1 Dance Academy in Chennai</div>
+            <div className="inline-block mb-4 fade-up bg-[rgba(201,168,76,.1)] text-(--gold) px-3 py-1 rounded-full text-xs font-bold border border-[rgba(201,168,76,.2)]">🏆 Ranked #1 Dance Academy in Chennai</div>
             <h1 className="playfair fade-up text-[3.8rem] font-bold leading-[1.15] mb-6 opacity-0" style={{ animationDelay: '.1s' }}>
               Move With <br />
               <span className="text-(--gold) italic">Purpose.</span><br />
@@ -223,7 +210,7 @@ const Home: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="float relative">
+          <div className="relative">
             {renderHeroCard()}
           </div>
         </div>
@@ -231,9 +218,9 @@ const Home: React.FC = () => {
 
       {/* --- STATS SECTION --- */}
       <section className="py-16 px-6 max-w-7xl mx-auto">
-        <div className="stats-grid grid grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {STATS.map((s, idx) => (
-            <div key={idx} className="stat-card rounded-2xl p-6 text-center">
+            <div key={idx} className="bg-[rgba(28,28,40,.6)] border border-[rgba(255,255,255,.05)] rounded-2xl p-6 text-center transition-transform hover:-translate-y-1 hover:border-(--gold)">
               <div className="text-4xl mb-3">{s.icon}</div>
               <div className="text-3xl font-bold text-(--gold)">{s.val}</div>
               <div className="font-semibold my-1">{s.label}</div>
@@ -247,32 +234,38 @@ const Home: React.FC = () => {
       <section className="py-20 px-6 bg-[#1c1c28]/30">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <div className="tag inline-block mb-3">Our Courses</div>
-            <h2 className="section-title mb-4">Dance Styles We Teach</h2>
-            <p className="text-white/50 max-w-150 mx-auto">From classical Indian forms to modern urban styles — find your rhythm and master the art.</p>
+            <div className="inline-block mb-3 bg-[rgba(201,168,76,.1)] text-(--gold) px-3 py-1 rounded-full text-xs font-bold border border-[rgba(201,168,76,.2)]">Our Courses</div>
+            <h2 className="playfair text-4xl font-bold mb-4">Dance Styles We Teach</h2>
+            <p className="text-white/50 max-w-2xl mx-auto">From classical Indian forms to modern urban styles — find your rhythm and master the art.</p>
           </div>
-          <div className="courses-grid grid grid-cols-3 gap-6">
-            {courses.map((c) => (
-              <div key={c.id} className="course-card rounded-2xl overflow-hidden">
-                <div className="course-thumb h-40 flex items-center justify-center relative" style={{ background: `linear-gradient(135deg, ${c.color}22, ${c.color}11)` }}>
-                  <span className="text-[5rem]">{c.emoji}</span>
-                  <div className="absolute top-3 right-3 tag">{c.level}</div>
-                </div>
-                <div className="p-5">
-                  <h3 className="font-bold text-lg mb-2">{c.name}</h3>
-                  <p className="text-sm text-white/50 mb-4 leading-relaxed min-h-15">{c.desc}</p>
-                  <div className="flex justify-between text-xs text-white/40 mb-4">
-                    <span>⏱ {c.duration}</span>
-                    <span>👥 {c.students} students</span>
+          
+          {courses.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {courses.map((c) => (
+                <div key={c._id} className="bg-[rgba(28,28,40,.6)] border border-white/5 rounded-2xl overflow-hidden hover:border-(--gold) transition-all hover:-translate-y-1">
+                  <div className="h-40 flex items-center justify-center relative" style={{ background: `linear-gradient(135deg, ${c.color}22, ${c.color}11)` }}>
+                    <span className="text-[5rem]">{c.emoji}</span>
+                    <div className="absolute top-3 right-3 bg-black/40 px-3 py-1 rounded-full text-xs text-white backdrop-blur-md">{c.level}</div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-base text-(--gold)">{c.price}</span>
-                    <button onClick={() => handleEnroll(c.name)} className="btn-gold px-4 py-2 rounded-lg text-xs">Enroll Now</button>
+                  <div className="p-5">
+                    <h3 className="font-bold text-lg mb-2">{c.name}</h3>
+                    <p className="text-sm text-white/50 mb-4 leading-relaxed min-h-15">{c.desc}</p>
+                    <div className="flex justify-between text-xs text-white/40 mb-4">
+                      <span>⏱ {c.duration}</span>
+                      <span>👥 {c.students || 120} students</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-base text-(--gold)">{c.price}</span>
+                      <button onClick={() => handleEnroll(c.name)} className="btn-gold px-4 py-2 rounded-lg text-xs border-none cursor-pointer">Enroll Now</button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+             <div className="text-center py-10 text-white/40 italic">Loading courses...</div>
+          )}
+
           <div className="text-center mt-14">
             <a href="/courses" className="btn-gold px-8 py-3 rounded-xl no-underline inline-block text-base font-bold">
               Explore More Courses →
@@ -285,12 +278,12 @@ const Home: React.FC = () => {
       <section className="py-20 px-6">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
           <div>
-            <div className="tag inline-block mb-3">Weekly Schedule</div>
-            <h2 className="section-title mb-4">This Week's Classes</h2>
+            <div className="inline-block mb-3 bg-[rgba(201,168,76,.1)] text-(--gold) px-3 py-1 rounded-full text-xs font-bold border border-[rgba(201,168,76,.2)]">Weekly Schedule</div>
+            <h2 className="playfair text-3xl font-bold mb-4">This Week's Classes</h2>
             <p className="text-white/50 mb-8">All classes held at our state-of-the-art studios. Book your spot before they fill up!</p>
             <div className="flex flex-col gap-3">
               {SCHEDULE.map((s, idx) => (
-                <div key={idx} className="event-item rounded-xl p-4 flex items-center gap-4">
+                <div key={idx} className="rounded-xl p-4 flex items-center gap-4 bg-[rgba(28,28,40,.6)] border border-white/5">
                   <div className="min-w-12 text-center">
                     <div className="text-[0.65rem] text-white/40 font-semibold">{s.day}</div>
                     <div className="text-sm font-bold text-(--gold)">{s.time}</div>
@@ -311,11 +304,11 @@ const Home: React.FC = () => {
             </div>
           </div>
           <div>
-            <div className="tag inline-block mb-3">Testimonials</div>
-            <h2 className="section-title mb-4">What Our Students Say</h2>
+            <div className="inline-block mb-3 bg-[rgba(201,168,76,.1)] text-(--gold) px-3 py-1 rounded-full text-xs font-bold border border-[rgba(201,168,76,.2)]">Testimonials</div>
+            <h2 className="playfair text-3xl font-bold mb-4">What Our Students Say</h2>
             <div className="flex flex-col gap-4">
               {TESTIMONIALS.map((t, idx) => (
-                <div key={idx} className="testimonial-card rounded-2xl p-5">
+                <div key={idx} className="rounded-2xl p-5 bg-[rgba(28,28,40,.6)] border border-white/5">
                   <div className="flex gap-1 mb-3 text-(--gold) text-sm">
                     {'★'.repeat(t.rating)}
                   </div>
@@ -338,8 +331,8 @@ const Home: React.FC = () => {
 
       {/* --- CTA SECTION --- */}
       <section className="py-20 px-6 bg-linear-to-br from-[#C9A84C14] to-[#6C4EF70D]">
-        <div className="max-w-175 mx-auto text-center">
-          <h2 className="section-title mb-4">Ready to Start Your Dance Journey?</h2>
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="playfair text-4xl font-bold mb-4">Ready to Start Your Dance Journey?</h2>
           <p className="text-white/50 mb-10 text-lg">Join MJ Dance Academy today. First class is on us. No experience needed.</p>
           <div className="flex gap-4 justify-center flex-wrap">
             <a href={session ? '/courses' : '/signup'} className="btn-gold px-8 py-3 rounded-xl text-sm no-underline inline-block">
@@ -352,7 +345,7 @@ const Home: React.FC = () => {
         </div>
       </section>
 
-      <Footer/>
+      <Footer />
     </>
   );
 };

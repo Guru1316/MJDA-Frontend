@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar, { type Session } from '../components/Navbar';
 import Footer from '../components/Footer';
+import { getAllCourses, createApplication } from '../services/api';
 
 const Application: React.FC = () => {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ const Application: React.FC = () => {
   const [courses, setCourses] = useState<any[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isCourseLocked, setIsCourseLocked] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -27,41 +29,43 @@ const Application: React.FC = () => {
 
   // --- Initialization & Auth Guard ---
   useEffect(() => {
-    // 1. Check Authentication
-    const storedSession = sessionStorage.getItem('mj_session');
-    if (!storedSession) {
-      navigate('/login');
-      return;
-    }
+    const initialize = async () => {
+      const storedSession = sessionStorage.getItem('mj_session');
+      if (!storedSession) {
+        navigate('/login');
+        return;
+      }
+      
+      const parsedSession = JSON.parse(storedSession);
+      
+      if (parsedSession.role === 'admin') {
+        alert('Admins cannot apply for courses.');
+        navigate('/');
+        return;
+      }
+
+      setSession(parsedSession);
+      setFormData(prev => ({
+        ...prev,
+        name: parsedSession.name || '',
+        email: parsedSession.email || ''
+      }));
+
+      try {
+        const data = await getAllCourses();
+        if(data) setCourses(data);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      } catch (err) {
+        console.error("Failed to load courses");
+      }
+
+      if (requestedCourse) {
+        setFormData(prev => ({ ...prev, courseName: requestedCourse }));
+        setIsCourseLocked(true);
+      }
+    };
     
-    const parsedSession = JSON.parse(storedSession);
-    
-    // Prevent admins from applying
-    if (parsedSession.role === 'admin') {
-      alert('Admins cannot apply for courses.');
-      navigate('/');
-      return;
-    }
-
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSession(parsedSession);
-
-    // 2. Pre-fill known user data
-    setFormData(prev => ({
-      ...prev,
-      name: parsedSession.name || '',
-      email: parsedSession.email || ''
-    }));
-
-    // 3. Load Courses for dropdown
-    const loadedCourses = JSON.parse(localStorage.getItem('mj_courses') || '[]');
-    setCourses(loadedCourses);
-
-    // 4. Handle URL Parameter Course Pre-selection
-    if (requestedCourse) {
-      setFormData(prev => ({ ...prev, courseName: requestedCourse }));
-      setIsCourseLocked(true);
-    }
+    initialize();
   }, [navigate, requestedCourse]);
 
   // --- Handlers ---
@@ -70,42 +74,44 @@ const Application: React.FC = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
 
-    // Simulate API Processing Time
-    setTimeout(() => {
-      const app = {
+    try {
+      await createApplication({
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
-        age: formData.age,
+        age: Number(formData.age),
         courseName: formData.courseName,
-        experience: formData.experience,
-        status: 'Pending',
-        date: new Date().toISOString()
-      };
+        experience: formData.experience
+      });
 
-      const apps = JSON.parse(localStorage.getItem('mj_applications') || '[]');
-      apps.push(app);
-      localStorage.setItem('mj_applications', JSON.stringify(apps));
-
-      setSuccessMsg('Application submitted! Awaiting Admin approval.');
-      
-      // Reset only the fields that make sense to reset
+      // Added "Redirecting..." to the message so the user knows what's happening
+      setSuccessMsg('Application submitted! Awaiting Admin approval. Redirecting...');
       setFormData(prev => ({
         ...prev,
         phone: '',
         age: '',
         experience: ''
       }));
-      
+
+      // Auto-navigate back after 3 seconds (3000 milliseconds)
+      setTimeout(() => {
+        navigate(-1);
+      }, 3000);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      setErrorMsg(error.message || 'Failed to submit application.');
+    } finally {
       setIsSubmitting(false);
-    }, 800);
+    }
   };
 
-  // If session is null, we are redirecting anyway, so don't render the form yet to prevent flash
   if (!session) return <div className="min-h-screen bg-(--dark)"></div>;
 
   return (
@@ -116,7 +122,6 @@ const Application: React.FC = () => {
       <div className="min-h-screen pt-32 pb-16 px-6 bg-linear-to-b from-[#12121A] to-[#0A0A0F] relative z-10 flex items-start justify-center">
         <div className="w-full max-w-2xl">
           
-          {/* --- BACK BUTTON --- */}
           <button 
             onClick={() => navigate(-1)}
             className="mb-6 flex items-center gap-2 text-white/50 hover:text-(--gold) transition-colors bg-transparent border-none cursor-pointer text-sm font-medium fade-up"
@@ -140,6 +145,12 @@ const Application: React.FC = () => {
                 {successMsg}
               </div>
             )}
+            
+            {errorMsg && (
+              <div className="mb-6 p-4 rounded-xl bg-red-400/10 border border-red-400/25 text-red-400 text-center font-semibold">
+                {errorMsg}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
               
@@ -147,20 +158,14 @@ const Application: React.FC = () => {
                 <div>
                   <label className="block text-sm text-white/60 mb-2">Full Name</label>
                   <input 
-                    type="text" 
-                    name="name"
-                    value={formData.name}
-                    readOnly
+                    type="text" name="name" value={formData.name} readOnly
                     className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none placeholder-white/30 opacity-70 cursor-not-allowed" 
                   />
                 </div>
                 <div>
                   <label className="block text-sm text-white/60 mb-2">Email Address</label>
                   <input 
-                    type="email" 
-                    name="email"
-                    value={formData.email}
-                    readOnly
+                    type="email" name="email" value={formData.email} readOnly
                     className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none placeholder-white/30 opacity-70 cursor-not-allowed" 
                   />
                 </div>
@@ -170,26 +175,14 @@ const Application: React.FC = () => {
                 <div>
                   <label className="block text-sm text-white/60 mb-2">Phone Number *</label>
                   <input 
-                    type="tel" 
-                    name="phone"
-                    required
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="+91 98765 43210" 
+                    type="tel" name="phone" required value={formData.phone} onChange={handleChange} placeholder="+91 98765 43210" 
                     className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all placeholder-white/30" 
                   />
                 </div>
                 <div>
                   <label className="block text-sm text-white/60 mb-2">Age *</label>
                   <input 
-                    type="number" 
-                    name="age"
-                    min="5"
-                    max="80"
-                    required
-                    value={formData.age}
-                    onChange={handleChange}
-                    placeholder="18" 
+                    type="number" name="age" min="5" max="80" required value={formData.age} onChange={handleChange} placeholder="18" 
                     className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all placeholder-white/30" 
                   />
                 </div>
@@ -198,16 +191,12 @@ const Application: React.FC = () => {
               <div>
                 <label className="block text-sm text-white/60 mb-2">Selected Course *</label>
                 <select 
-                  name="courseName"
-                  required
-                  value={formData.courseName}
-                  onChange={handleChange}
-                  disabled={isCourseLocked}
+                  name="courseName" required value={formData.courseName} onChange={handleChange} disabled={isCourseLocked}
                   className={`w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all [&>option]:bg-[#1C1C28] ${isCourseLocked ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
                   <option value="">Select a course...</option>
                   {courses.map(c => (
-                    <option key={c.id} value={c.name}>{c.name}</option>
+                    <option key={c._id} value={c.name}>{c.name}</option>
                   ))}
                 </select>
                 {isCourseLocked && (
@@ -218,18 +207,13 @@ const Application: React.FC = () => {
               <div>
                 <label className="block text-sm text-white/60 mb-2">Dance Experience (Optional)</label>
                 <textarea 
-                  name="experience"
-                  rows={3} 
-                  value={formData.experience}
-                  onChange={handleChange}
-                  placeholder="Tell us about your background..." 
+                  name="experience" rows={3} value={formData.experience} onChange={handleChange} placeholder="Tell us about your background..." 
                   className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all placeholder-white/30 resize-y"
                 ></textarea>
               </div>
               
               <button 
-                type="submit" 
-                disabled={isSubmitting}
+                type="submit" disabled={isSubmitting}
                 className="w-full py-4 rounded-xl text-sm font-bold border-none transition-all mt-4 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                 style={{ background: 'linear-gradient(135deg, #C9A84C, #F0D080)', color: '#0A0A0F' }}
               >

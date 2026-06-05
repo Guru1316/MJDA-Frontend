@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { registerUser } from '../services/api'; // <-- Backend API import
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();
@@ -34,26 +35,25 @@ const Signup: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // --- Auto-save to SessionStorage on change ---
-  useEffect(() => {
-    sessionStorage.setItem('mj_signup_step', JSON.stringify(currentStep));
-    sessionStorage.setItem('mj_signup_data', JSON.stringify(formData));
-  }, [currentStep, formData]);
-
   // --- Handlers ---
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
+    
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    setFormData((prev: any) => ({ ...prev, [name]: val }));
+    setFormData((prev: any) => {
+      const newData = { ...prev, [name]: val };
+      sessionStorage.setItem('mj_signup_data', JSON.stringify(newData));
+      return newData;
+    });
     setError(null);
   };
 
   const nextStep = () => {
     setError(null);
-    const { firstName, lastName, email } = formData;
+    const { firstName, lastName, email, dob } = formData;
     
-    if (!firstName.trim() || !lastName.trim() || !email.trim()) {
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !dob) {
       setError('Please fill in all required fields.');
       return;
     }
@@ -63,11 +63,13 @@ const Signup: React.FC = () => {
     }
     
     setCurrentStep(2);
+    sessionStorage.setItem('mj_signup_step', JSON.stringify(2));
   };
 
   const prevStep = () => {
     setError(null);
     setCurrentStep(1);
+    sessionStorage.setItem('mj_signup_step', JSON.stringify(1));
   };
 
   const calculateStrength = (pwd: string) => {
@@ -79,7 +81,7 @@ const Signup: React.FC = () => {
     return s;
   };
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     setError(null);
     const { password, confirmPassword, agreeTerms, email, firstName, lastName, phone, dob, gender } = formData;
 
@@ -98,44 +100,38 @@ const Signup: React.FC = () => {
 
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      const users = JSON.parse(localStorage.getItem('mj_users') || '[]');
+    try {
+      // Call the real backend API!
+      const data = await registerUser({
+        firstName, lastName, email, phone, dob, gender, password
+      });
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (users.find((u: any) => u.email === email)) {
-        setError('An account with this email already exists.');
-        setIsSubmitting(false);
-        return;
-      }
-
-      const newUser = {
-        id: 'usr_' + Date.now(),
-        name: `${firstName.trim()} ${lastName.trim()}`,
-        email,
-        phone,
-        dob,
-        gender,
-        password, 
-        role: 'student',
-        joinDate: new Date().toISOString()
+      const session = { 
+        email: data.email, 
+        name: data.name, 
+        role: data.role, 
+        token: data.token, // Store JWT token
+        loggedIn: true 
       };
       
-      users.push(newUser);
-      localStorage.setItem('mj_users', JSON.stringify(users));
-      
-      const session = { email: newUser.email, name: newUser.name, role: newUser.role, loggedIn: true };
       sessionStorage.setItem('mj_session', JSON.stringify(session));
       
-      // Clear form data from session storage after successful signup
+      // Clear temp storage
       sessionStorage.removeItem('mj_signup_step');
       sessionStorage.removeItem('mj_signup_data');
       
       setSuccess('Account created successfully! Redirecting...');
       
       setTimeout(() => {
-        navigate('/');
+        navigate('/'); 
       }, 1500);
-    }, 1200);
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      setError(err.message || 'Registration failed.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const pwdStrength = calculateStrength(formData.password);
@@ -167,10 +163,14 @@ const Signup: React.FC = () => {
           <button onClick={() => navigate('/login')} className="flex items-center gap-3 no-underline group bg-transparent border-none cursor-pointer">
             <div className="relative w-11 h-11 rounded-full p-0.5 bg-linear-to-br from-[#C9A84C] to-[#F0D080] transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(201,168,76,.4)]">
               <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
-                <img src="logo.png" alt="MJ Logo" className="w-full h-full object-cover" />
+                <img 
+                  src="logo.png" 
+                  alt="MJ Logo" 
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
-            <span className="font-playfair font-bold text-2xl tracking-wide text-transparent bg-clip-text bg-linear-to-r from-[#C9A84C] via-white to-[#C9A84C] bg-size-[200%_auto] transition-all duration-1000 ease-out group-hover:bg-position-[-100%_center]">
+            <span className="font-playfair font-bold text-2xl tracking-wide text-white transition-all duration-500 group-hover:text-[#F0D080] group-hover:drop-shadow-[0_0_12px_rgba(201,168,76,0.6)]">
               MJ Dance Academy
             </span>
           </button>
@@ -196,32 +196,39 @@ const Signup: React.FC = () => {
             <span>Security</span>
           </div>
 
-          {error && <div className="mb-4 p-3 rounded-lg text-sm bg-red-400/10 border border-red-400/30 text-red-400">{error}</div>}
-          {success && <div className="mb-4 p-3 rounded-lg text-sm bg-green-400/10 border border-green-400/30 text-green-400">{success}</div>}
+          {error && (
+            <div className="mb-4 p-3 rounded-lg text-sm bg-red-400/10 border border-red-400/30 text-red-400">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="mb-4 p-3 rounded-lg text-sm bg-green-400/10 border border-green-400/30 text-green-400">
+              {success}
+            </div>
+          )}
 
           {currentStep === 1 && (
             <div className="fade-up">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-sm text-white/60 mb-2">First Name</label>
-                  <input type="text" name="firstName" value={formData.firstName} onChange={handleChange} placeholder="Michael" className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all placeholder-white/30" />
+                  <label className="block text-sm text-white/60 mb-2">First Name *</label>
+                  <input type="text" name="firstName" value={formData.firstName} onChange={handleChange} placeholder="Michael" className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all placeholder-white/30" required />
                 </div>
                 <div>
-                  <label className="block text-sm text-white/60 mb-2">Last Name</label>
-                  <input type="text" name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Jackson" className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all placeholder-white/30" />
+                  <label className="block text-sm text-white/60 mb-2">Last Name *</label>
+                  <input type="text" name="lastName" value={formData.lastName} onChange={handleChange} placeholder="Jackson" className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all placeholder-white/30" required />
                 </div>
                 <div>
-                  <label className="block text-sm text-white/60 mb-2">Email Address</label>
-                  <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="you@example.com" className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all placeholder-white/30" />
+                  <label className="block text-sm text-white/60 mb-2">Email Address *</label>
+                  <input type="email" name="email" value={formData.email} onChange={handleChange} placeholder="you@example.com" className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all placeholder-white/30" required />
                 </div>
                 <div>
                   <label className="block text-sm text-white/60 mb-2">Phone Number</label>
                   <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="+91 98765 43210" className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all placeholder-white/30" />
                 </div>
                 <div>
-                  <label className="block text-sm text-white/60 mb-2">Date of Birth</label>
-                  {/* Added max={maxDate} here to prevent future dates */}
-                  <input type="date" name="dob" max={maxDate} value={formData.dob} onChange={handleChange} className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all" style={{ colorScheme: 'dark' }} />
+                  <label className="block text-sm text-white/60 mb-2">Date of Birth *</label>
+                  <input type="date" name="dob" max={maxDate} value={formData.dob} onChange={handleChange} className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all" style={{ colorScheme: 'dark' }} required />
                 </div>
                 <div>
                   <label className="block text-sm text-white/60 mb-2">Gender</label>
@@ -244,7 +251,14 @@ const Signup: React.FC = () => {
                 <div>
                   <label className="block text-sm text-white/60 mb-2">Create Password</label>
                   <div className="relative">
-                    <input type={showPassword ? 'text' : 'password'} name="password" value={formData.password} onChange={handleChange} placeholder="Min. 8 characters" className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all pr-12 placeholder-white/30" />
+                    <input 
+                      type={showPassword ? 'text' : 'password'} 
+                      name="password" 
+                      value={formData.password} 
+                      onChange={handleChange} 
+                      placeholder="Min. 8 characters" 
+                      className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all pr-12 placeholder-white/30" 
+                    />
                     <button type="button" className="absolute right-3 top-3 text-white/40 hover:text-(--gold) transition-colors bg-transparent border-none cursor-pointer" onClick={() => setShowPassword(!showPassword)}>
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-5 h-5">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -262,7 +276,14 @@ const Signup: React.FC = () => {
                 <div>
                   <label className="block text-sm text-white/60 mb-2">Confirm Password</label>
                   <div className="relative">
-                    <input type={showConfirm ? 'text' : 'password'} name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="Re-enter your password" className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all pr-12 placeholder-white/30" />
+                    <input 
+                      type={showConfirm ? 'text' : 'password'} 
+                      name="confirmPassword" 
+                      value={formData.confirmPassword} 
+                      onChange={handleChange} 
+                      placeholder="Re-enter your password" 
+                      className="w-full px-4 py-3 rounded-xl text-sm bg-white/5 border border-[rgba(201,168,76,.2)] text-white focus:outline-none focus:border-(--gold) focus:bg-[rgba(201,168,76,.08)] transition-all pr-12 placeholder-white/30" 
+                    />
                     <button type="button" className="absolute right-3 top-3 text-white/40 hover:text-(--gold) transition-colors bg-transparent border-none cursor-pointer" onClick={() => setShowConfirm(!showConfirm)}>
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-5 h-5">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
@@ -273,7 +294,7 @@ const Signup: React.FC = () => {
 
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input type="checkbox" name="agreeTerms" checked={formData.agreeTerms} onChange={handleChange} className="mt-1 w-4 h-4 cursor-pointer" style={{ accentColor: 'var(--gold)' }} />
-                  <span className="text-white/50 text-sm">I agree to the <button onClick={() => navigate('/terms')} className="text-(--gold) bg-transparent border-none cursor-pointer p-0 font-inherit hover:underline">Terms & Conditions</button> and <button onClick={() => navigate('/privacy')} className="text-(--gold) bg-transparent border-none cursor-pointer p-0 font-inherit hover:underline">Privacy Policy</button></span>
+                  <span className="text-white/50 text-sm">I agree to the <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-(--gold) bg-transparent border-none cursor-pointer p-0 font-inherit hover:underline no-underline">Terms & Conditions</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-(--gold) bg-transparent border-none cursor-pointer p-0 font-inherit hover:underline no-underline">Privacy Policy</a></span>
                 </label>
               </div>
 
