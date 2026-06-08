@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 
+// Import all your pages
 import Home from '../pages/Home';
 import About from '../pages/About';
 import Signup from '../pages/Signup';
@@ -14,9 +15,10 @@ import Courses from '../pages/Courses';
 import Application from '../pages/Application';
 import Admin from '../pages/Admin'; 
 
+// Import the new bouncer
 import ProtectedRoute from '../components/ProtectedRoute';
-import PublicRoute from '../components/PublicRoute'; // <-- Import new guard
 
+// A simple placeholder for pages we haven't built yet
 const Placeholder: React.FC<{ title: string }> = ({ title }) => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-(--dark) text-white pt-20 px-6 text-center">
     <div className="text-6xl mb-4">🚧</div>
@@ -49,18 +51,18 @@ const AppRoutes: React.FC = () => {
       <Route 
         path="/admin" 
         element={
-          <ProtectedRoute requireAdmin={true}> {/* <-- Strict Admin Guard! */}
+          <ProtectedRoute>
             <Admin />
           </ProtectedRoute>
         } 
       />
       
-      {/* 🚪 PUBLIC ONLY ROUTES (Auth) 🚪 */}
-      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-      <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
-      <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
+      {/* Auth Routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       
-      {/* Catch-all */}
+      {/* Catch-all for 404 - Page Not Found */}
       <Route path="*" element={<Placeholder title="404 - Not Found" />} />
     </Routes>
   );
