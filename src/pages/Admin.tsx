@@ -212,7 +212,7 @@ const Admin: React.FC = () => {
       {/* Sidebar */}
       <div className="w-full md:w-64 bg-(--dark2) border-r border-[rgba(201,168,76,.15)] flex flex-col md:min-h-screen shrink-0">
         <div className="p-6 border-b border-[rgba(201,168,76,.1)]">
-          <a href="/" className="flex items-center gap-3 no-underline group">
+          <a href="/admin" className="flex items-center gap-3 no-underline group">
             <div className="relative shrink-0 w-11 h-11 rounded-full p-0.5 bg-linear-to-br from-[#C9A84C] to-[#F0D080] transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(201,168,76,.4)]">
               <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
                 <img 

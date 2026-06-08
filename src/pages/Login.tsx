@@ -24,7 +24,7 @@ const Login: React.FC = () => {
           sessionStorage.removeItem('mj_session');
         } else {
           sessionStorage.setItem('mj_session', JSON.stringify(r));
-          navigate('/');
+          navigate('/', { replace: true });
         }
       } catch (e) {
         console.error('Failed to parse remember me token', e);
@@ -57,9 +57,9 @@ const Login: React.FC = () => {
       }
 
       if (data.role === 'admin') {
-        navigate('/admin'); 
+        navigate('/admin', { replace: true }); 
       } else {
-        navigate('/');
+        navigate('/', { replace: true });
       }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
