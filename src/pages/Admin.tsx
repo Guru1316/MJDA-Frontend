@@ -51,6 +51,21 @@ interface Course {
 const Admin: React.FC = () => {
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const sessionStr = sessionStorage.getItem('mj_session');
+    if (!sessionStr) {
+      navigate('/login', { replace: true });
+      return;
+    }
+    const session = JSON.parse(sessionStr);
+    if (session.role !== 'admin') {
+      navigate('/', { replace: true });
+      return;
+    }
+    // eslint-disable-next-line react-hooks/immutability
+    loadData();
+  }, [navigate]);
+
   // --- State ---
   const [activeTab, setActiveTab] = useState<'dashboard' | 'applications' | 'enquiries' | 'courses' | 'users'>('dashboard');
   
@@ -86,8 +101,7 @@ const Admin: React.FC = () => {
       navigate('/');
       return;
     }
-
-    // eslint-disable-next-line react-hooks/immutability
+    
     loadData();
   }, [navigate]);
 
