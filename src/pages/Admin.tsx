@@ -52,26 +52,19 @@ const Admin: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-  // Create a fake history entry
   window.history.pushState(null, '', window.location.href);
 
-  const preventBack = () => {
-    const sessionStr = sessionStorage.getItem('mj_session');
-
-    if (sessionStr) {
-      const session = JSON.parse(sessionStr);
-
-      if (session.role === 'admin') {
-        window.history.pushState(null, '', window.location.href);
-      }
-    }
+  const handleBackButton = () => {
+    // eslint-disable-next-line react-hooks/immutability
+    handleLogout();
   };
 
-  window.addEventListener('popstate', preventBack);
+  window.addEventListener('popstate', handleBackButton);
 
   return () => {
-    window.removeEventListener('popstate', preventBack);
+    window.removeEventListener('popstate', handleBackButton);
   };
+// eslint-disable-next-line react-hooks/exhaustive-deps
 }, []);
 
   useEffect(() => {
