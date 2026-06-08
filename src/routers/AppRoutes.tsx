@@ -29,6 +29,14 @@ const Placeholder: React.FC<{ title: string }> = ({ title }) => (
 );
 
 const AppRoutes: React.FC = () => {
+
+  const rememberToken = localStorage.getItem('mj_remember');
+  const activeSession = sessionStorage.getItem('mj_session');
+  
+  if (rememberToken && !activeSession) {
+    sessionStorage.setItem('mj_session', rememberToken);
+  }
+  
   return (
     <Routes>
       {/* Main Pages */}
