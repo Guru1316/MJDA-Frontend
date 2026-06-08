@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // <-- Added this import
+import { Link, useNavigate } from 'react-router-dom';
 
 // Exporting Session so we can use it in Home.tsx too!
 export interface Session {
@@ -20,7 +20,6 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, session }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
-  // <-- Initialize the navigate hook
   const navigate = useNavigate(); 
 
   useEffect(() => {
@@ -49,7 +48,7 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, session }) => {
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b border-[rgba(201,168,76,.15)] backdrop-blur-xl ${scrolled ? 'bg-[rgba(10,10,15,.98)]' : 'bg-[rgba(10,10,15,.9)]'}`}>
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-18">
         {/* Logo */}
-        <a href="/" className="flex items-center gap-3 no-underline group">
+        <Link to="/" className="flex items-center gap-3 no-underline group">
           <div className="relative w-11 h-11 rounded-full p-0.5 bg-linear-to-br from-[#C9A84C] to-[#F0D080] transition-all duration-300 group-hover:scale-105 group-hover:shadow-[0_0_20px_rgba(201,168,76,.4)]">
             <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center">
               <img 
@@ -62,18 +61,18 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, session }) => {
           <span className="font-playfair font-bold text-xl tracking-wide text-transparent bg-clip-text bg-linear-to-r from-[#C9A84C] via-white to-[#C9A84C] bg-size-[200%_auto] transition-all duration-1000 ease-out group-hover:bg-position-[-100%_center]">
             MJ Dance Academy
           </span>
-        </a>
+        </Link>
 
         {/* Desktop Links */}
         <div className="hidden lg:flex items-center gap-8">
           {navLinks.map(l => (
-            <a 
+            <Link 
               key={l.id} 
-              href={l.href} 
+              to={l.href} 
               className={`no-underline text-sm font-medium transition-colors hover:text-(--gold) ${activePage === l.id ? 'text-(--gold)' : 'text-white/70'}`}
             >
               {l.label}
-            </a>
+            </Link>
           ))}
         </div>
 
@@ -113,8 +112,8 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, session }) => {
             </div>
           ) : (
             <div className="hidden lg:flex items-center gap-2">
-              <a href="/login" className="no-underline text-sm text-white/70 px-4 py-2 rounded-lg border border-white/10 transition-all hover:bg-white/5">Sign In</a>
-              <a href="/signup" className="no-underline text-sm font-semibold text-[#0A0A0F] px-4.5 py-2 rounded-lg bg-linear-to-br from-[#C9A84C] to-[#F0D080] transition-transform hover:-translate-y-px">Join Now</a>
+              <Link to="/login" className="no-underline text-sm text-white/70 px-4 py-2 rounded-lg border border-white/10 transition-all hover:bg-white/5">Sign In</Link>
+              <Link to="/signup" className="no-underline text-sm font-semibold text-[#0A0A0F] px-4.5 py-2 rounded-lg bg-linear-to-br from-[#C9A84C] to-[#F0D080] transition-transform hover:-translate-y-px">Join Now</Link>
             </div>
           )}
 
@@ -135,14 +134,14 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, session }) => {
       {mobileMenuOpen && (
         <div className="lg:hidden absolute top-full left-0 w-full p-6 border-t border-[rgba(201,168,76,.1)] bg-[rgba(10,10,15,.98)] backdrop-blur-xl shadow-2xl">
           <div className="flex flex-col mb-4">
-            {[...navLinks].map(l => (
-              <a 
+            {[...navLinks, { label: 'FAQ', href: '/faq', id: 'faq' }].map(l => (
+              <Link 
                 key={l.id} 
-                href={l.href} 
+                to={l.href} 
                 className={`block py-3 no-underline text-base border-b border-white/5 ${activePage === l.id ? 'text-(--gold) font-semibold' : 'text-white/70'}`}
               >
                 {l.label}
-              </a>
+              </Link>
             ))}
           </div>
           
@@ -167,8 +166,8 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, session }) => {
             </div>
           ) : (
             <div className="pt-4 border-t border-white/10 flex flex-col gap-3">
-              <a href="/login" className="block text-center w-full py-3 text-white/70 border border-white/10 rounded-xl no-underline text-sm font-semibold">Sign In</a>
-              <a href="/signup" className="block text-center w-full py-3 bg-linear-to-br from-[#C9A84C] to-[#F0D080] text-[#0A0A0F] font-bold rounded-xl no-underline text-sm">Join Now</a>
+              <Link to="/login" className="block text-center w-full py-3 text-white/70 border border-white/10 rounded-xl no-underline text-sm font-semibold">Sign In</Link>
+              <Link to="/signup" className="block text-center w-full py-3 bg-linear-to-br from-[#C9A84C] to-[#F0D080] text-[#0A0A0F] font-bold rounded-xl no-underline text-sm">Join Now</Link>
             </div>
           )}
         </div>

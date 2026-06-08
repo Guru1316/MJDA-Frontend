@@ -15,8 +15,9 @@ import Courses from '../pages/Courses';
 import Application from '../pages/Application';
 import Admin from '../pages/Admin'; 
 
-// Import the new bouncer
+// Import the route guards
 import ProtectedRoute from '../components/ProtectedRoute';
+import PublicRoute from '../components/PublicRoute'; 
 
 // A simple placeholder for pages we haven't built yet
 const Placeholder: React.FC<{ title: string }> = ({ title }) => (
@@ -51,18 +52,18 @@ const AppRoutes: React.FC = () => {
       <Route 
         path="/admin" 
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireAdmin={true}>
             <Admin />
           </ProtectedRoute>
         } 
       />
       
-      {/* Auth Routes */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
+      {/* 🚪 PUBLIC ONLY ROUTES (Auth) 🚪 */}
+      <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+      <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+      <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
       
-      {/* Catch-all for 404 - Page Not Found */}
+      {/* Catch-all */}
       <Route path="*" element={<Placeholder title="404 - Not Found" />} />
     </Routes>
   );
