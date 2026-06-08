@@ -18,7 +18,7 @@ const api = axios.create({
 // --- 2. Axios Interceptor ---
 api.interceptors.request.use(
   (config) => {
-    const sessionStr = sessionStorage.getItem('mj_session');
+    const sessionStr = sessionStorage.getItem('mj_session') || localStorage.getItem('mj_remember');
     if (sessionStr) {
       const session = JSON.parse(sessionStr);
       if (session.token) {
