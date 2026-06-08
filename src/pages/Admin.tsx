@@ -52,6 +52,29 @@ const Admin: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+  // Create a fake history entry
+  window.history.pushState(null, '', window.location.href);
+
+  const preventBack = () => {
+    const sessionStr = sessionStorage.getItem('mj_session');
+
+    if (sessionStr) {
+      const session = JSON.parse(sessionStr);
+
+      if (session.role === 'admin') {
+        window.history.pushState(null, '', window.location.href);
+      }
+    }
+  };
+
+  window.addEventListener('popstate', preventBack);
+
+  return () => {
+    window.removeEventListener('popstate', preventBack);
+  };
+}, []);
+
+  useEffect(() => {
     const sessionStr = sessionStorage.getItem('mj_session');
     if (!sessionStr) {
       navigate('/login', { replace: true });
@@ -101,7 +124,7 @@ const Admin: React.FC = () => {
       navigate('/');
       return;
     }
-    
+
     loadData();
   }, [navigate]);
 
