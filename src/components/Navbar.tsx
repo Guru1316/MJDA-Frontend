@@ -29,11 +29,11 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, session }) => {
   }, []);
 
   const handleLogout = () => {
-    // Clear storage
-    sessionStorage.removeItem('mj_session');
+    // ☢️ NUCLEAR CLEAR: Wipe everything completely!
+    sessionStorage.clear(); 
     localStorage.removeItem('mj_remember');
     
-    // Use navigate with replace: true to clear the history stack properly
+    // Kick to login and erase history
     navigate('/login', { replace: true });
   };
 

@@ -19,15 +19,34 @@ import Admin from '../pages/Admin';
 import ProtectedRoute from '../components/ProtectedRoute';
 import PublicRoute from '../components/PublicRoute'; 
 
+// 🚨 THE BULLETPROOF FIX + ADMIN ASSASSIN 🚨
 const syncSession = () => {
   const rememberToken = localStorage.getItem('mj_remember');
-  const activeSession = sessionStorage.getItem('mj_session');
-  
-  if (rememberToken && !activeSession) {
-    sessionStorage.setItem('mj_session', rememberToken);
+
+  if (rememberToken) {
+    try {
+      const parsed = JSON.parse(rememberToken);
+      
+      // 🔪 THE ASSASSIN: Admins should NEVER be in localStorage! 
+      // If we find an old admin token stuck here, completely destroy it.
+      if (parsed.role === 'admin') {
+        localStorage.removeItem('mj_remember');
+        sessionStorage.removeItem('mj_session');
+        return; // Stop the function completely
+      }
+
+      // If it's a valid student, perfectly restore their session
+      if (!sessionStorage.getItem('mj_session')) {
+        sessionStorage.setItem('mj_session', rememberToken);
+      }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
+      // If the token is corrupted, wipe it
+      localStorage.removeItem('mj_remember');
+    }
   }
 };
-syncSession();
+syncSession(); // Execute immediately!
 
 // A simple placeholder for pages we haven't built yet
 const Placeholder: React.FC<{ title: string }> = ({ title }) => (
