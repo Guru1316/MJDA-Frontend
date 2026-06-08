@@ -19,6 +19,16 @@ import Admin from '../pages/Admin';
 import ProtectedRoute from '../components/ProtectedRoute';
 import PublicRoute from '../components/PublicRoute'; 
 
+const syncSession = () => {
+  const rememberToken = localStorage.getItem('mj_remember');
+  const activeSession = sessionStorage.getItem('mj_session');
+  
+  if (rememberToken && !activeSession) {
+    sessionStorage.setItem('mj_session', rememberToken);
+  }
+};
+syncSession();
+
 // A simple placeholder for pages we haven't built yet
 const Placeholder: React.FC<{ title: string }> = ({ title }) => (
   <div className="min-h-screen flex flex-col items-center justify-center bg-(--dark) text-white pt-20 px-6 text-center">
@@ -29,14 +39,6 @@ const Placeholder: React.FC<{ title: string }> = ({ title }) => (
 );
 
 const AppRoutes: React.FC = () => {
-
-  const rememberToken = localStorage.getItem('mj_remember');
-  const activeSession = sessionStorage.getItem('mj_session');
-  
-  if (rememberToken && !activeSession) {
-    sessionStorage.setItem('mj_session', rememberToken);
-  }
-  
   return (
     <Routes>
       {/* Main Pages */}
