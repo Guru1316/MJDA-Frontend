@@ -112,8 +112,8 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, session }) => {
             </div>
           ) : (
             <div className="hidden lg:flex items-center gap-2">
-              <Link to="/login" className="no-underline text-sm text-white/70 px-4 py-2 rounded-lg border border-white/10 transition-all hover:bg-white/5">Sign In</Link>
-              <Link to="/signup" className="no-underline text-sm font-semibold text-[#0A0A0F] px-4.5 py-2 rounded-lg bg-linear-to-br from-[#C9A84C] to-[#F0D080] transition-transform hover:-translate-y-px">Join Now</Link>
+              {/* <Link to="/login" className="no-underline text-sm text-white/70 px-4 py-2 rounded-lg border border-white/10 transition-all hover:bg-white/5">Sign In</Link> */}
+              <Link to="/login" className="no-underline text-sm font-semibold text-[#0A0A0F] px-4.5 py-2 rounded-lg bg-linear-to-br from-[#C9A84C] to-[#F0D080] transition-transform hover:-translate-y-px">Sign In</Link>
             </div>
           )}
 
@@ -134,7 +134,7 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, session }) => {
       {mobileMenuOpen && (
         <div className="lg:hidden absolute top-full left-0 w-full p-6 border-t border-[rgba(201,168,76,.1)] bg-[rgba(10,10,15,.98)] backdrop-blur-xl shadow-2xl">
           <div className="flex flex-col mb-4">
-            {[...navLinks, { label: 'FAQ', href: '/faq', id: 'faq' }].map(l => (
+            {[...navLinks].map(l => (
               <Link 
                 key={l.id} 
                 to={l.href} 
