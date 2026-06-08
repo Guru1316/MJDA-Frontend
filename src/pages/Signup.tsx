@@ -123,7 +123,7 @@ const Signup: React.FC = () => {
       setSuccess('Account created successfully! Redirecting...');
       
       setTimeout(() => {
-        navigate('/', { replace: true }); 
+        navigate('/'); 
       }, 1500);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

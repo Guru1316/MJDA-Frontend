@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { loginUser } from '../services/api'; // <-- Backend API import
 
@@ -13,24 +13,24 @@ const Login: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // // --- Auto-Login Check ---
-  // useEffect(() => {
-  //   const rem = localStorage.getItem('mj_remember');
-  //   if (rem) {
-  //     try {
-  //       const r = JSON.parse(rem);
-  //       if (r.role === 'admin') {
-  //         localStorage.removeItem('mj_remember');
-  //         sessionStorage.removeItem('mj_session');
-  //       } else {
-  //         sessionStorage.setItem('mj_session', JSON.stringify(r));
-  //         navigate('/', { replace: true });
-  //       }
-  //     } catch (e) {
-  //       console.error('Failed to parse remember me token', e);
-  //     }
-  //   }
-  // }, [navigate]);
+  // --- Auto-Login Check ---
+  useEffect(() => {
+    const rem = localStorage.getItem('mj_remember');
+    if (rem) {
+      try {
+        const r = JSON.parse(rem);
+        if (r.role === 'admin') {
+          localStorage.removeItem('mj_remember');
+          sessionStorage.removeItem('mj_session');
+        } else {
+          sessionStorage.setItem('mj_session', JSON.stringify(r));
+          navigate('/');
+        }
+      } catch (e) {
+        console.error('Failed to parse remember me token', e);
+      }
+    }
+  }, [navigate]);
 
   // --- Handlers ---
   const handleLogin = async (e: React.FormEvent) => {
@@ -57,9 +57,9 @@ const Login: React.FC = () => {
       }
 
       if (data.role === 'admin') {
-        navigate('/admin', { replace: true }); 
+        navigate('/admin'); 
       } else {
-        navigate('/', { replace: true });
+        navigate('/');
       }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
