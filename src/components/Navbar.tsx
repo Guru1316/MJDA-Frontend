@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // <-- Added this import
 
 // Exporting Session so we can use it in Home.tsx too!
 export interface Session {
   name: string;
   email: string;
   role: string;
-  token?: string; // Added token to type definition
+  token?: string;
   loggedIn: boolean;
 }
 
@@ -18,6 +19,9 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, session }) => {
   const [scrolled, setScrolled] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // <-- Initialize the navigate hook
+  const navigate = useNavigate(); 
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -26,9 +30,12 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, session }) => {
   }, []);
 
   const handleLogout = () => {
+    // Clear storage
     sessionStorage.removeItem('mj_session');
     localStorage.removeItem('mj_remember');
-    window.location.href = '/login';
+    
+    // Use navigate with replace: true to clear the history stack properly
+    navigate('/login', { replace: true });
   };
 
   const navLinks = [

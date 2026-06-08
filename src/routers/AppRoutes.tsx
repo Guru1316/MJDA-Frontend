@@ -13,7 +13,10 @@ import Terms from '../pages/Terms';
 import Contact from '../pages/Contact';
 import Courses from '../pages/Courses';
 import Application from '../pages/Application';
-import Admin from '../pages/Admin'; // <--- The new Admin page!
+import Admin from '../pages/Admin'; 
+
+// Import the new bouncer
+import ProtectedRoute from '../components/ProtectedRoute';
 
 // A simple placeholder for pages we haven't built yet
 const Placeholder: React.FC<{ title: string }> = ({ title }) => (
@@ -36,9 +39,23 @@ const AppRoutes: React.FC = () => {
       <Route path="/terms" element={<Terms />} />
       <Route path="/courses" element={<Courses />} />
       
-      {/* App & Action Routes */}
-      <Route path="/application" element={<Application />} />
-      <Route path="/admin" element={<Admin />} /> {/* <--- Connected right here! */}
+      {/* 🔒 PROTECTED ROUTES 🔒 */}
+      <Route 
+        path="/application" 
+        element={
+          <ProtectedRoute>
+            <Application />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin" 
+        element={
+          <ProtectedRoute>
+            <Admin />
+          </ProtectedRoute>
+        } 
+      />
       
       {/* Auth Routes */}
       <Route path="/login" element={<Login />} />
