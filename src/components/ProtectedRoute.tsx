@@ -3,33 +3,25 @@ import { Navigate } from 'react-router-dom';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requireAdmin?: boolean;
+  requireAdmin?: boolean; // <-- Added this
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin = false }) => {
   const sessionStr = sessionStorage.getItem('mj_session') || localStorage.getItem('mj_remember');
 
   if (!sessionStr) {
+    // Not logged in? Kick to login and replace history!
     return <Navigate to="/login" replace />;
   }
 
   try {
     const session = JSON.parse(sessionStr);
-    const isAdmin = session.role === 'admin';
-    const currentPath = window.location.pathname;
-
-    // RULE 1: If Admin, ONLY allow access to /admin
-    if (isAdmin && currentPath !== '/admin') {
-      // eslint-disable-next-line react-hooks/error-boundaries
-      return <Navigate to="/admin" replace />;
-    }
-
-    // RULE 2: If Student, block access to /admin
-    if (!isAdmin && currentPath === '/admin') {
+    
+    // If this page requires Admin, but user is a student, kick them to Home!
+    if (requireAdmin && session.role !== 'admin') {
       // eslint-disable-next-line react-hooks/error-boundaries
       return <Navigate to="/" replace />;
     }
-
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (e) {
     return <Navigate to="/login" replace />;
