@@ -166,8 +166,8 @@ const Navbar: React.FC<NavbarProps> = ({ activePage, session }) => {
             </div>
           ) : (
             <div className="pt-4 border-t border-white/10 flex flex-col gap-3">
-              <Link to="/login" className="block text-center w-full py-3 text-white/70 border border-white/10 rounded-xl no-underline text-sm font-semibold">Sign In</Link>
-              <Link to="/signup" className="block text-center w-full py-3 bg-linear-to-br from-[#C9A84C] to-[#F0D080] text-[#0A0A0F] font-bold rounded-xl no-underline text-sm">Join Now</Link>
+              {/* <Link to="/login" className="block text-center w-full py-3 text-white/70 border border-white/10 rounded-xl no-underline text-sm font-semibold">Sign In</Link> */}
+              <Link to="/login" className="block text-center w-full py-3 bg-linear-to-br from-[#C9A84C] to-[#F0D080] text-[#0A0A0F] font-bold rounded-xl no-underline text-sm">Sign In</Link>
             </div>
           )}
         </div>
