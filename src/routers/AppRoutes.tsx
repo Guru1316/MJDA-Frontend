@@ -1,6 +1,8 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 
+import ScrollToTop from "../components/ScrollToTop";
+
 // Import all your pages
 import Home from '../pages/Home';
 import About from '../pages/About';
@@ -59,6 +61,8 @@ const Placeholder: React.FC<{ title: string }> = ({ title }) => (
 
 const AppRoutes: React.FC = () => {
   return (
+    <>
+    <ScrollToTop />
     <Routes>
       {/* Main Pages */}
       <Route path="/" element={<Home />} />
@@ -95,6 +99,7 @@ const AppRoutes: React.FC = () => {
       {/* Catch-all */}
       <Route path="*" element={<Placeholder title="404 - Not Found" />} />
     </Routes>
+    </>
   );
 };
 
